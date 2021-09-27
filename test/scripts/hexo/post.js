@@ -880,6 +880,50 @@ describe('Post', () => {
     }
   });
 
+  it('render() - nested swig tag', async () => {
+    const content = [
+      '{% blockquote %}',
+      'test1',
+      '{% quote test2 %}',
+      'test3',
+      '{% endquote %}',
+      'test4',
+      '{% endblockquote %}'
+    ].join('\n');
+
+    const data = await post.render(null, {
+      content
+    });
+    data.content.trim().should.eql([
+      '<blockquote><p>test1</p>',
+      '<blockquote><p>test3</p>',
+      '<footer><strong>test2</strong></footer></blockquote>',
+      'test4</blockquote>'
+    ].join('\n'));
+  });
+
+  it('render() - shouln\'t break curly brackets', async () => {
+    hexo.config.prismjs.enable = true;
+    hexo.config.highlight.enable = false;
+
+    const content = [
+      '\\begin{equation}',
+      'E=h\\nu',
+      '\\end{equation}'
+    ].join('\n');
+
+    const data = await post.render(null, {
+      content,
+      engine: 'markdown'
+    });
+
+    data.content.should.include('\\begin{equation}');
+    data.content.should.include('\\end{equation}');
+
+    hexo.config.prismjs.enable = false;
+    hexo.config.highlight.enable = true;
+  });
+
   // #2321
   it('render() - allow backtick code block in "blockquote" tag plugin', async () => {
     const code = 'alert("Hello world")';
